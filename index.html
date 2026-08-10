@@ -381,6 +381,7 @@
                 // Add day number and small label
                 button.innerHTML = `${day}<small>${isShift ? 'tură' : isLeave ? 'concediu' : '—'}</small>`;
 
+		let suppressClick = false;
                 button.addEventListener('contextmenu', (e) => {
 		    e.preventDefault():
 		    supressClick = true;
