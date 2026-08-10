@@ -284,7 +284,7 @@
         // ----- Initialize default shift days according to script: for n in $(seq 1 4 31); do n2=$(($n + 1)); shiftDays="$shiftDays $n $n2"; done
         function buildDefaultShiftDays() {
             const days = [];
-            for (let n = 3; n <= 30; n += 4) {
+            for (let n = 2; n <= 30; n += 4) {
                 days.push(n);
                 const n2 = n + 1;
                 if (n2 <= 30) {
