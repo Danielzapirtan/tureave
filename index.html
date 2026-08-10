@@ -284,10 +284,10 @@
 	let sept = false;
 	let maxDay = 31;
 	const septElement = document.getElementById("sept");
-	septElement.addEventListener("change", (e) => {
+	septElement.addEventListener("input", (e) => {
 		sept = septElement.checked;
 		maxDay = sept ? 30 : 31;
-		renderAll();
+		resetToDefaults();
 	});
 
         // ----- Initialize default shift days according to script: for n in $(seq 1 4 31); do n2=$(($n + 1)); shiftDays="$shiftDays $n $n2"; done
