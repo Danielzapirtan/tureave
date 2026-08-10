@@ -284,11 +284,10 @@
         // ----- Initialize default shift days according to script: for n in $(seq 1 4 31); do n2=$(($n + 1)); shiftDays="$shiftDays $n $n2"; done
         function buildDefaultShiftDays() {
             const days = [];
-	    days.push(1);
-            for (let n = 4; n <= 31; n += 4) {
+            for (let n = 3; n <= 30; n += 4) {
                 days.push(n);
                 const n2 = n + 1;
-                if (n2 <= 31) {
+                if (n2 <= 30) {
                     days.push(n2);
                 }
             }
@@ -311,7 +310,7 @@
         // ----- Toggle function: mirrors the bash toggle logic exactly
         function toggleDay(day) {
             const dayNum = Number(day);
-            if (isNaN(dayNum) || dayNum < 1 || dayNum > 31) return;
+            if (isNaN(dayNum) || dayNum < 1 || dayNum > 30) return;
 
             if (arrayIncludesDay(shiftDays, dayNum)) {
                 // Day is in shiftDays -> move to leaveDays
@@ -352,7 +351,7 @@
             if (!dayGridEl) return;
             dayGridEl.innerHTML = '';
 
-            for (let day = 1; day <= 31; day++) {
+            for (let day = 1; day <= 30; day++) {
                 const button = document.createElement('button');
                 button.className = 'day-btn';
                 button.setAttribute('data-day', day);
