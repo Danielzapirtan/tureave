@@ -238,6 +238,7 @@
         🗓️ Planificare lunară
         <span>ture/concediu</span>
     </h1>
+    <input type="checkbox" id="sept">Sept</input>
     <div class="subtitle">Atinge o zi pentru a comuta între tură (12h) și concediu (8h)</div>
 
     <!-- Statistics display -->
@@ -280,14 +281,25 @@
         let shiftDays = [];
         // leaveDays holds days that are leave (8h each)
         let leaveDays = [];
+	let sept = false;
+	let maxDay = 31;
+	const septElement = document.getElementById("sept");
+	septElement.addEventListener("change", (e) => {
+		sept = septElement.checked;
+		maxDay = sept ? 30 : 31;
+		renderAll();
+	});
 
         // ----- Initialize default shift days according to script: for n in $(seq 1 4 31); do n2=$(($n + 1)); shiftDays="$shiftDays $n $n2"; done
         function buildDefaultShiftDays() {
             const days = [];
-            for (let n = 2; n <= 30; n += 4) {
+	    if (!sept) {
+		days.push(1);
+	    }
+            for (let n = sept ? 2 : 4; n <= maxDay; n += 4) {
                 days.push(n);
                 const n2 = n + 1;
-                if (n2 <= 30) {
+                if (n2 <= maxDay) {
                     days.push(n2);
                 }
             }
@@ -310,7 +322,7 @@
         // ----- Toggle function: mirrors the bash toggle logic exactly
         function toggleDay(day) {
             const dayNum = Number(day);
-            if (isNaN(dayNum) || dayNum < 1 || dayNum > 30) return;
+            if (isNaN(dayNum) || dayNum < 1 || dayNum > maxDay) return;
 
             if (arrayIncludesDay(shiftDays, dayNum)) {
                 // Day is in shiftDays -> move to leaveDays
@@ -351,7 +363,7 @@
             if (!dayGridEl) return;
             dayGridEl.innerHTML = '';
 
-            for (let day = 1; day <= 30; day++) {
+            for (let day = 1; day <= maxDay; day++) {
                 const button = document.createElement('button');
                 button.className = 'day-btn';
                 button.setAttribute('data-day', day);
