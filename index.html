@@ -381,7 +381,18 @@
                 // Add day number and small label
                 button.innerHTML = `${day}<small>${isShift ? 'tură' : isLeave ? 'concediu' : '—'}</small>`;
 
+                button.addEventListener('contextmenu', (e) => {
+		    e.preventDefault():
+		    supressClick = true;
+                    const dayValue = parseInt(e.currentTarget.getAttribute('data-day'), 10);
+                    toggleDay(dayValue);
+                });
+
                 button.addEventListener('click', (e) => {
+		    if (supressClick) {
+			    supressClick = false;
+			    return;
+		    }
                     const dayValue = parseInt(e.currentTarget.getAttribute('data-day'), 10);
                     toggleDay(dayValue);
                 });
