@@ -1,5 +1,9 @@
 #! /bin/bash
 
+years="2026"
+months="9 10"
+year=2026
+month=10
 shiftDays=""
 for n in $(seq 1 4 31); do
   n2=$(($n + 1))
