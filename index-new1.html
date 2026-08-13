@@ -112,13 +112,14 @@ header{
 
 /* ---------- Calendar ---------- */
 .cal{
-  background:var(--surface); border-radius:var(--radius); overflow:hidden;
+  background:var(--surface); border-radius:var(--radius); overflow:auto;
   color:var(--ink);
 }
 .cal-head{
   display:grid; grid-template-columns:repeat(7,1fr);
   background:var(--surface-dim);
   border-bottom:1px solid #00000014;
+  min-width: 507px;
 }
 .cal-head div{
   padding:9px 6px; text-align:center; font-size:11px; font-weight:700;
