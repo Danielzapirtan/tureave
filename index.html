@@ -66,6 +66,8 @@ header{
   transition:background .15s, border-color .15s;
 }
 .month-nav button:hover{background:#232C31; border-color:var(--amber);}
+.month-nav button:disabled{opacity:0.4; cursor:not-allowed;}
+.month-nav button:disabled:hover{background:var(--ink-2); border-color:var(--line);}
 .month-nav select{
   background:var(--ink-2); color:var(--white); border:1px solid var(--line);
   border-radius:var(--radius-sm); padding:8px 10px; font-family:'Space Grotesk',sans-serif;
@@ -317,7 +319,7 @@ footer{
   const DOW_NAMES = ['Lun','Mar','Mie','Joi','Vin','Sâm','Dum']; // week starts Monday
 
   const STORAGE_KEY = 'leavePlannerOverrides_v1';
-  const HOLIDAY_CACHE_KEY = 'leavePlannerHolidays_v1';
+  const HOLIDAY_CACHE_KEY = 'leavePlannerHolidays_v2'; // v2 for new API structure
 
   // ---------- State ----------
   let overrides = loadOverrides(); // { 'yyyy-mm-dd': {status:'worked'|'part'|'leave'|'free', hours?:n} }
@@ -374,38 +376,105 @@ footer{
     return fmtKey(new Date());
   }
 
-  // ---------- Holidays (Zile Libere API) ----------
+  // ---------- Holidays API (with fallback) ----------
+  async function fetchHolidaysFromAPI(year) {
+    // Try multiple free APIs for Romanian holidays
+    const apis = [
+      {
+        name: 'DateNager',
+        url: `https://date.nager.at/api/v3/PublicHolidays/${year}/RO`,
+        parse: (data) => {
+          const map = new Map();
+          if (Array.isArray(data)) {
+            data.forEach(holiday => {
+              if (holiday.date && holiday.name) {
+                map.set(holiday.date, holiday.name);
+              }
+            });
+          }
+          return map;
+        }
+      },
+      {
+        name: 'ZileLibere',
+        url: `https://zilelibere.webventure.ro/api/${year}`,
+        parse: (data) => {
+          const map = new Map();
+          if (Array.isArray(data)) {
+            data.forEach(entry => {
+              // Handle different possible response structures
+              if (entry.date && typeof entry.date === 'string') {
+                // Format: "yyyy-mm-dd" or "yyyy/mm/dd"
+                const key = entry.date.replace(/\//g, '-');
+                map.set(key, entry.name || entry.title || 'Sărbătoare legală');
+              } else if (entry.dates && Array.isArray(entry.dates)) {
+                entry.dates.forEach(d => {
+                  if (typeof d === 'string') {
+                    const key = d.replace(/\//g, '-');
+                    map.set(key, entry.name || entry.title || 'Sărbătoare legală');
+                  }
+                });
+              }
+            });
+          }
+          return map;
+        }
+      }
+    ];
+
+    for (const api of apis) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const res = await fetch(api.url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        
+        const data = await res.json();
+        const holidays = api.parse(data);
+        
+        if (holidays.size > 0) {
+          console.log(`Successfully loaded holidays from ${api.name}`);
+          return holidays;
+        }
+      } catch (err) {
+        console.warn(`Failed to load holidays from ${api.name}:`, err);
+        // Continue to next API
+      }
+    }
+    
+    throw new Error('All holiday APIs failed');
+  }
+
   async function ensureHolidaysForYear(year){
     if(holidaysByYear[year]) return holidaysByYear[year];
 
     const cache = loadHolidayCache();
-    if(cache[year]){
+    if(cache[year] && Array.isArray(cache[year]) && cache[year].length > 0){
       holidaysByYear[year] = new Map(cache[year]);
       return holidaysByYear[year];
     }
 
     setApiStatus('Se încarcă sărbătorile legale pentru ' + year + '…', false);
     try{
-      const res = await fetch(`https://zilelibere.webventure.ro/api/${year}`);
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      const map = new Map();
-      (data || []).forEach(entry => {
-        (entry.date || []).forEach(d => {
-          // API format: "yyyy/mm/dd" -> normalize to "yyyy-mm-dd"
-          const key = (d.date || '').replaceAll('/','-');
-          if(key) map.set(key, entry.name || 'Sărbătoare legală');
-        });
-      });
-      holidaysByYear[year] = map;
-      const toStore = loadHolidayCache();
-      toStore[year] = Array.from(map.entries());
-      saveHolidayCache(toStore);
-      setApiStatus('Sărbători legale actualizate pentru ' + year + '.', false);
+      const holidays = await fetchHolidaysFromAPI(year);
+      if (holidays.size > 0) {
+        holidaysByYear[year] = holidays;
+        const toStore = loadHolidayCache();
+        toStore[year] = Array.from(holidays.entries());
+        saveHolidayCache(toStore);
+        setApiStatus('Sărbători legale actualizate pentru ' + year + '.', false);
+      } else {
+        throw new Error('No holidays found');
+      }
     }catch(err){
       console.error('Eroare la încărcarea sărbătorilor legale:', err);
       holidaysByYear[year] = new Map();
-      setApiStatus(err + 'Nu s-au putut încărca sărbătorile legale pentru ' + year + ' (API indisponibil). Grila funcționează în continuare, fără evidențierea sărbătorilor.', true);
+      setApiStatus('Nu s-au putut încărca sărbătorile legale pentru ' + year + ' (API indisponibil). Grila funcționează în continuare.', true);
     }
     return holidaysByYear[year];
   }
@@ -423,7 +492,6 @@ footer{
   }
 
   // ---------- Day status resolution ----------
-  // Returns { status: 'worked'|'part'|'leave'|'free', hours: number, cycle: 'day'|'night'|'free' }
   function resolveDay(date){
     const key = fmtKey(date);
     const cycle = cycleTypeFor(date);
@@ -542,7 +610,7 @@ footer{
       if(key === tKey) cell.classList.add('today');
       cell.tabIndex = 0;
       cell.setAttribute('role','button');
-      cell.setAttribute('aria-label', `${d} ${MONTH_NAMES[currentMonth]} — ${statusLabel(info)}`);
+      cell.setAttribute('aria-label', `${d} ${MONTH_NAMES[currentMonth]} — ${statusLabel(info)}${holidayName ? ' — ' + holidayName : ''}`);
 
       const rail = document.createElement('div');
       rail.className = 'rail ' + (info.cycle === 'day' ? 'cyc-day' : info.cycle === 'night' ? 'cyc-night' : 'cyc-free');
@@ -581,7 +649,6 @@ footer{
       cell.addEventListener('keydown', (e) => {
         if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openEditor(date); }
       });
-      // contextmenu (right click) also opens the editor, per spec ("hold or contextmenu")
       cell.addEventListener('contextmenu', (e) => { e.preventDefault(); openEditor(date); });
 
       grid.appendChild(cell);
@@ -599,7 +666,7 @@ footer{
     const lastOfMonth = new Date(currentYear, currentMonth + 1, 0);
     const daysInMonth = lastOfMonth.getDate();
 
-    let targetOfficeDays = 0; // weekdays that are not public holidays
+    let targetOfficeDays = 0;
     let hoursWorked = 0;
     let daysWorked = 0;
     let daysPartial = 0;
@@ -700,7 +767,7 @@ footer{
       }
       saveOverrides();
       closeEditor();
-      await renderAll(); // "before each user interaction, app updates stats and grid" — refresh right after too
+      await renderAll();
     });
 
     document.getElementById('clearBtn').addEventListener('click', async () => {
@@ -722,20 +789,16 @@ footer{
     });
   }
 
-  // ---------- Long-press support (touch) ----------
-  // Click already opens the editor (per spec: "hold or contextmenu"); on touch devices
-  // a tap is the natural equivalent of a click, so this is intentionally handled by the
-  // existing click listener above. Long-press via contextmenu is covered for desktop right-click.
-
   // ---------- Init ----------
   async function init(){
     populateNav();
     wireEditor();
     clampToRange();
-    // Before first interaction, load current + next year holidays proactively for smooth nav
     await renderAll();
     // Pre-warm adjacent year in background
-    ensureHolidaysForYear(currentYear + 1 <= MAX_DATE.getFullYear() ? currentYear + 1 : currentYear);
+    if(currentYear + 1 <= MAX_DATE.getFullYear()) {
+      ensureHolidaysForYear(currentYear + 1);
+    }
   }
 
   document.getElementById('prevBtn').addEventListener('click', async () => {
@@ -756,4 +819,3 @@ footer{
 </script>
 </body>
 </html>
-
