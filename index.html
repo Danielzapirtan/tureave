@@ -314,8 +314,9 @@ footer{
   // ---------- Constants ----------
   const REF_DATE = new Date(2026, 7, 13); // 13 Aug 2026 = DAY shift (month is 0-indexed)
   const CYCLE = ['day','night','free','free'];
-  const MIN_DATE = new Date(2026, 8, 1);  // Sep 2026
-  const MAX_DATE = new Date(2028, 11, 31); // Dec 2028
+  const TODAY = new Date();
+  const MIN_DATE = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 1);  // Sep 2026
+  const MAX_DATE = new Date(TODAY.getFullYear() + 2, 11, 31); // Dec 2028
 
   const MONTH_NAMES = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
   const DOW_NAMES = ['Lun','Mar','Mie','Joi','Vin','Sâm','Dum']; // week starts Monday
@@ -326,8 +327,8 @@ footer{
   // ---------- State ----------
   let overrides = loadOverrides(); // { 'yyyy-mm-dd': {status:'worked'|'part'|'leave'|'free', hours?:n} }
   let holidaysByYear = {}; // year -> Map('yyyy-mm-dd' -> name)
-  let currentYear = 2026;
-  let currentMonth = 8; // 0-indexed, September
+  let currentYear = MIN_DATE.getFullYear();
+  let currentMonth = MIN_DATE.getMonth(); // 0-indexed, September
 
   let activeEditDate = null; // Date object currently being edited
   let selectedStatus = null;
@@ -524,7 +525,7 @@ footer{
       monthSel.appendChild(opt);
     });
     yearSel.innerHTML = '';
-    for(let y=2026; y<=2028; y++){
+    for(let y=MIN_DATE.getFullYear(); y<=MAX_DATE.getFullYear(); y++){
       const opt = document.createElement('option');
       opt.value = y; opt.textContent = y;
       yearSel.appendChild(opt);
