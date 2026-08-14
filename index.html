@@ -276,7 +276,6 @@ footer{
     <div class="cal-grid" id="calGrid"></div>
   </div>
 
-  <footer>Ciclul de tură se calculează față de 13 august 2026 (zi). Apasă / ține apăsat pe o zi pentru a o edita.</footer>
 </div>
 
 <!-- Editor overlay -->
@@ -312,7 +311,14 @@ footer{
   'use strict';
 
   // ---------- Constants ----------
-  const REF_DATE = new Date(2026, 7, 13); // 13 Aug 2026 = DAY shift (month is 0-indexed)
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  let tura = 3;                         
+  if (urlParams.has("user")) {                 const userValue = urlParams.get("user")
+;                                              const users = [ "ljc1q", "xxtoo", "fras0", "l3hb4" ];
+    tura = 1 + users.indexOf(userValue);
+  }
+  const REF_DATE = new Date(2026, 7, 10 + tura); // 13 Aug 2026 = DAY shift (month is 0-indexed)
   const CYCLE = ['day','night','free','free'];
   const TODAY = new Date();
   const MIN_DATE = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 1);  // Sep 2026
