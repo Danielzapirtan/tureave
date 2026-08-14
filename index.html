@@ -115,6 +115,7 @@ header{
 /* ---------- Calendar ---------- */
 .cal{
   background:var(--surface); border-radius:var(--radius); overflow:auto;
+  min-width: 644px;
   color:var(--ink);
 }
 .cal-head{
@@ -124,7 +125,7 @@ header{
   min-width: 507px;
 }
 .cal-head div{
-  padding:9px 6px; text-align:center; font-size:11px; font-weight:700;
+  padding:9px 6px; text-align:center; font-size:11px; font-weight:700; min-width: 92px;
   letter-spacing:.06em; text-transform:uppercase; color:#5B6660;
 }
 .cal-head div.weekend{color:var(--amber);}
@@ -139,6 +140,7 @@ header{
   background:var(--surface);
   transition:background .12s;
   display:flex; flex-direction:column; gap:4px;
+  min-width: 92px;
 }
 .day:hover{background:#EAE5D8;}
 .day:focus-visible{outline:2px solid var(--amber); outline-offset:-2px;}
