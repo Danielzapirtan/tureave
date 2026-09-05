@@ -114,18 +114,16 @@ header{
 
 /* ---------- Calendar ---------- */
 .cal{
-  background:var(--surface); border-radius:var(--radius); overflow:auto;
-  min-width: 644px;
+  background:var(--surface); border-radius:var(--radius); overflow:hidden;
   color:var(--ink);
 }
 .cal-head{
   display:grid; grid-template-columns:repeat(7,1fr);
   background:var(--surface-dim);
   border-bottom:1px solid #00000014;
-  min-width: 507px;
 }
 .cal-head div{
-  padding:9px 6px; text-align:center; font-size:11px; font-weight:700; min-width: 92px;
+  padding:9px 6px; text-align:center; font-size:11px; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase; color:#5B6660;
 }
 .cal-head div.weekend{color:var(--amber);}
@@ -140,7 +138,6 @@ header{
   background:var(--surface);
   transition:background .12s;
   display:flex; flex-direction:column; gap:4px;
-  min-width: 92px;
 }
 .day:hover{background:#EAE5D8;}
 .day:focus-visible{outline:2px solid var(--amber); outline-offset:-2px;}
@@ -171,6 +168,7 @@ header{
   padding:2px 7px; border-radius:20px;
   margin-top:auto;
 }
+.day .badge::after{display:none;}
 .badge.worked{background:var(--teal); color:#EFF6F3;}
 .badge.leave{background:var(--violet); color:#F3EFFA;}
 .badge.free{background:#DAD4C4; color:#5B6660;}
@@ -234,8 +232,30 @@ footer{
 .api-status.err{color:var(--amber);}
 
 @media(max-width:560px){
-  .day{min-height:70px; padding:5px 5px 6px 8px;}
+  .cal{border-radius:var(--radius-sm);}
+  .cal-head div{padding:8px 2px; font-size:10px; letter-spacing:.02em;}
+  .day{
+    min-height:72px;
+    padding:5px 3px 6px 7px;
+    gap:2px;
+  }
+  .day .num{font-size:13px;}
+  .day .cyc-tag{display:none;}
   .day .holi-name{display:none;}
+  .day .badge{
+    width:calc(100% - 1px);
+    padding:3px 2px;
+    text-align:center;
+    font-size:0;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .day .badge::after{
+    display:block;
+    content:attr(data-short);
+    font-size:9px;
+  }
   .brand h1{font-size:21px;}
   .stat .value{font-size:21px;}
 }
@@ -649,10 +669,24 @@ footer{
       }
 
       const badge = document.createElement('span');
-      if(info.status === 'worked'){ badge.className='badge worked'; badge.textContent='Lucrat 12h'; }
-      else if(info.status === 'part'){ badge.className='badge part'; badge.textContent='Parțial ' + info.hours + 'h'; }
-      else if(info.status === 'leave'){ badge.className='badge leave'; badge.textContent='Concediu 8h'; }
-      else { badge.className='badge free'; badge.textContent='Liber'; }
+      if(info.status === 'worked'){
+        badge.className='badge worked';
+        badge.textContent='Lucrat 12h';
+        badge.dataset.short='12h';
+      } else if(info.status === 'part'){
+        badge.className='badge part';
+        badge.textContent='Parțial ' + info.hours + 'h';
+        badge.dataset.short=info.hours + 'h';
+      } else if(info.status === 'leave'){
+        badge.className='badge leave';
+        badge.textContent='Concediu 8h';
+        badge.dataset.short='CO';
+      } else {
+        badge.className='badge free';
+        badge.textContent='Liber';
+        badge.dataset.short='Liber';
+      }
+      badge.title = badge.textContent;
       cell.appendChild(badge);
 
       cell.addEventListener('click', () => openEditor(date));
